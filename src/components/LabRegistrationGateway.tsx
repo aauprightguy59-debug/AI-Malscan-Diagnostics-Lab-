@@ -95,31 +95,24 @@ export default function LabRegistrationGateway({
 
   // Auto-generated Lab Node Code state
   const [newLabCode, setNewLabCode] = useState(() => {
-    if (registeredFacility?.code) return registeredFacility.code;
-    return generateLabNodeCode(registeredFacility?.name || 'JADSL Community Lab', registeredFacility?.lga || 'Gboko LGA');
+    return registeredFacility?.code || '';
   });
   const [isAutoCode, setIsAutoCode] = useState(!registeredFacility?.code);
+  const [generatedCodeMessage, setGeneratedCodeMessage] = useState<string | null>(null);
 
-  // Auto-generate fresh Lab Node Code
+  // Manual regenerate / preview fresh Lab Node Code
   const handleRegenerateNodeCode = () => {
     const freshCode = generateLabNodeCode(newLabName || 'Diagnostic Lab', newLga || 'Gboko LGA');
     setNewLabCode(freshCode);
     setIsAutoCode(true);
   };
 
-  // Sync auto-code when lab name or LGA changes if in auto-mode
   const handleLabNameChange = (val: string) => {
     setNewLabName(val);
-    if (isAutoCode && (!newLabCode || newLabCode.startsWith('GBK-'))) {
-      setNewLabCode(generateLabNodeCode(val, newLga));
-    }
   };
 
   const handleLgaChange = (val: string) => {
     setNewLga(val);
-    if (isAutoCode) {
-      setNewLabCode(generateLabNodeCode(newLabName, val));
-    }
   };
 
   // Save / Register Diagnostic Lab
@@ -128,11 +121,17 @@ export default function LabRegistrationGateway({
     setError(null);
 
     if (!newLabName.trim()) {
-      setError('Diagnostic Lab Name is required before login.');
+      setError('Diagnostic Lab Name is required before registration.');
       return;
     }
     
-    const finalCode = newLabCode.trim() || generateLabNodeCode(newLabName, newLga);
+    // Auto-generate fresh unique Lab Node Code upon clicking Register
+    const finalCode = (isAutoCode || !newLabCode.trim())
+      ? generateLabNodeCode(newLabName, newLga)
+      : newLabCode.trim().toUpperCase();
+
+    setNewLabCode(finalCode);
+    setGeneratedCodeMessage(finalCode);
 
     const hybridMods: string[] = [
       'Digital Thin Smear AI Optical Rig (100x Oil)',
@@ -145,7 +144,7 @@ export default function LabRegistrationGateway({
     const newFac: LabFacility = {
       id: `FAC-${Date.now().toString(36).toUpperCase()}`,
       name: newLabName.trim(),
-      code: finalCode.toUpperCase(),
+      code: finalCode,
       tier: newLabTier,
       state: newState.trim() || 'Benue State',
       lga: newLga.trim() || 'Gboko LGA',
@@ -174,7 +173,7 @@ export default function LabRegistrationGateway({
     setTimeout(() => {
       setRegistrationSuccess(false);
       setActiveStep('signin');
-    }, 1000);
+    }, 1200);
   };
 
   // Submit Chief Technician Sign In
@@ -278,13 +277,21 @@ export default function LabRegistrationGateway({
                 <span>MLSCN & NMEP Accredited Gateway</span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <h1 className="text-2xl font-black text-white tracking-tight leading-tight">
                   Diagnostic Lab Registration
                 </h1>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-teal-300/90 font-medium leading-relaxed">
                   Register your diagnostic laboratory facility to authenticate and unlock diagnostic suite instruments.
                 </p>
+                <div className="space-y-2.5 pt-1 text-[11px] text-slate-300 leading-relaxed">
+                  <p>
+                    The AI-MalScan Hybrid Laboratory is designed as a shared national asset supporting multiple authorized users per facility. To maintain compliance, accountability, and real-time outbreak surveillance, access to the diagnostic workflow and instruments is controlled through facility-level authentication.
+                  </p>
+                  <p className="text-slate-400">
+                    All laboratories must be registered and verified on the national network before activation. Once authenticated, authorized staff are granted role-based access to the Diagnostic Microscope Unit and the Central Surveillance Dashboard, ensuring every result is traceable to a facility, user, and clinic site.
+                  </p>
+                </div>
               </div>
 
               {/* Status / Active Lab Display Card */}
@@ -393,10 +400,14 @@ export default function LabRegistrationGateway({
 
               {/* Registration Success Notification */}
               {registrationSuccess && (
-                <div className="mb-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3.5 flex items-center space-x-3 animate-fade-in">
+                <div className="mb-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3.5 flex items-center space-x-3 animate-fade-in shadow-lg shadow-emerald-500/10">
                   <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                   <div className="text-xs text-emerald-300 font-bold">
-                    Diagnostic Lab Registered! Proceeding to Chief Scientist Sign-In...
+                    Diagnostic Lab Registered! Generated Lab Node Code:{' '}
+                    <span className="font-mono bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/40 text-emerald-200">
+                      {generatedCodeMessage || newLabCode}
+                    </span>{' '}
+                    • Proceeding to Chief Scientist Sign-In...
                   </div>
                 </div>
               )}
@@ -450,14 +461,18 @@ export default function LabRegistrationGateway({
                           Lab Node Code <span className="text-teal-400">*</span>
                         </label>
                         <div className="flex items-center space-x-1">
-                          <span className="text-[9px] font-mono bg-teal-500/15 text-teal-300 px-1.5 py-0.5 rounded border border-teal-500/30 flex items-center space-x-1">
+                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded border flex items-center space-x-1 ${
+                            newLabCode
+                              ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                              : 'bg-teal-500/15 text-teal-300 border-teal-500/30'
+                          }`}>
                             <Sparkles className="h-2.5 w-2.5 text-teal-400" />
-                            <span>AUTO-GENERATED</span>
+                            <span>{newLabCode ? 'NODE CODE READY' : 'GENERATES ON REGISTER'}</span>
                           </span>
                           <button
                             type="button"
                             onClick={handleRegenerateNodeCode}
-                            title="Regenerate unique node identifier"
+                            title="Preview / generate code now"
                             className="p-1 text-slate-400 hover:text-teal-300 hover:bg-slate-800 rounded transition-colors cursor-pointer"
                           >
                             <RefreshCw className="h-3 w-3" />
@@ -467,16 +482,19 @@ export default function LabRegistrationGateway({
                       <input
                         id="new-lab-code-input"
                         type="text"
-                        required
                         value={newLabCode}
                         onChange={(e) => {
                           setNewLabCode(e.target.value);
                           setIsAutoCode(false);
                         }}
-                        placeholder="e.g. GBK-JADSL-01"
+                        placeholder="Auto-generated on clicking 'Register Lab & Proceed'"
                         className="w-full bg-slate-950 border border-teal-500/40 rounded-xl px-3 py-2.5 text-xs text-teal-300 font-bold placeholder-slate-600 focus:outline-none focus:border-teal-400 font-mono uppercase"
                       />
-                      <p className="text-[10px] text-slate-500 mt-1 font-mono">Auto-generated diagnostic station ID for DHIS2 & national epidemiological data retrieval</p>
+                      <p className="text-[10px] text-slate-500 mt-1 font-mono">
+                        {newLabCode 
+                          ? 'Identifier ready. Will bind to facility upon registration.' 
+                          : '⚡ Auto-generates unique identifier upon clicking "Register Lab & Proceed".'}
+                      </p>
                     </div>
 
                     <div>
