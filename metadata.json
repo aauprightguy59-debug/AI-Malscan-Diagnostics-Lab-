@@ -1,0 +1,8 @@
+{
+  "name": "Remix AI-MalScan Diagnostics",
+  "description": "AI-powered 4-in-1 hybrid malaria diagnostic suite for rural clinics and remote IDP camps, featuring AI thin smear microscopy, optical RDT reader, Hemoglobin/PCV analyzer, G6PD biosensor safety gate, and molecular LAMP profiler.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
