@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const labLogo = '/assets/images/malaria_lab_logo_1783687025061.jpg';
-export const falciparumImg = '/assets/images/falciparum_smear_1783686249385.jpg';
-export const vivaxImg = '/assets/images/vivax_smear_1783686263162.jpg';
-export const malariaeImg = '/assets/images/malariae_smear_1783686277652.jpg';
-export const normalImg = '/assets/images/normal_smear_1783686291345.jpg';
+export const labLogo = '/malaria_lab_logo_1783687025061.jpg';
+export const falciparumImg = '/falciparum_smear_1783686249385.jpg';
+export const vivaxImg = '/vivax_smear_1783686263162.jpg';
+export const malariaeImg = '/malariae_smear_1783686277652.jpg';
+export const normalImg = '/normal_smear_1783686291345.jpg';
 
 export interface LabFacility {
   id: string;
@@ -76,10 +76,10 @@ export interface DiagnosticResult {
 export interface RDTResult {
   performed: boolean;
   cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual' | 'Pf (HRP2) Single' | 'Pan-Malaria (pLDH)';
-  controlLine: boolean; // Must be true for valid test
-  hrp2Line: boolean; // Falciparum
-  pldhLine: boolean; // Vivax/Pan
-  opticalDensityScore: number; // 0.0 - 1.0
+  controlLine: boolean;
+  hrp2Line: boolean;
+  pldhLine: boolean;
+  opticalDensityScore: number;
   faintLineDetected: boolean;
   interpretation: 'Pf Positive (HRP2+)' | 'Pv/Pan Positive (pLDH+)' | 'Dual Pf+Pv Positive' | 'Negative' | 'Invalid (No Control Line)';
   concordanceStatus: 'Concordant' | 'Sub-microscopic Infection' | 'Suspected HRP2 Deletion' | 'Residual Antigenaemia' | 'Not Evaluated';
@@ -89,8 +89,8 @@ export interface RDTResult {
 
 export interface HemoglobinResult {
   performed: boolean;
-  hbValue: number; // in g/dL, e.g. 12.4
-  pcvValue: number; // Hematocrit in %, approx Hb * 3
+  hbValue: number;
+  pcvValue: number;
   deviceModel: 'HemoCue Hb 301 (Bluetooth)' | 'URIT-12 Hemoglobinometer' | 'Manual Photometer';
   anemiaSeverity: 'Normal' | 'Mild Anemia' | 'Moderate Anemia' | 'Severe Anemia (<7.0 g/dL)' | 'Critical (<5.0 g/dL)';
   bloodTransfusionIndicated: boolean;
@@ -99,8 +99,8 @@ export interface HemoglobinResult {
 
 export interface G6PDResult {
   performed: boolean;
-  enzymaticActivity: number; // U/g Hb, e.g. 9.8
-  percentNormal: number; // e.g. 95%
+  enzymaticActivity: number;
+  percentNormal: number;
   status: 'Normal (>70%)' | 'Intermediate (30-70%)' | 'Deficient (<30%)' | 'Pending / Not Tested';
   primaquineSafe: boolean;
   deviceModel: 'SD Biosensor STANDARD G6PD' | 'CareStart G6PD Biosensor' | 'Qualitative FST';
@@ -115,7 +115,7 @@ export interface MolecularResult {
   targetGenes: Array<'18S rRNA' | 'pfhrp2' | 'pfhrp3' | 'kelch13 (K13 Artemisinin Resistance)' | 'pfcrt' | 'pfmdr1'>;
   dnaDetected: boolean;
   k13MutationDetected: boolean;
-  k13MutationDetails?: string; // e.g. "Wild Type (Sensitive)" or "C580Y Resistance Mutation Detected"
+  k13MutationDetails?: string;
   amplificationTimeMin: number;
   cycleThresholdOrIntensity: number;
   timestamp: string;
@@ -159,11 +159,11 @@ export interface DiagnosticRecord {
   molecularResult?: MolecularResult;
   severityGrade: 'Uncomplicated' | 'Severe (High Parasitemia)' | 'Emergency (Severe Anemic Crisis)' | 'Negative';
   timestamp: string;
-  workerConfirmed: boolean | null; // null = pending, true = confirmed, false = flagged/override
+  workerConfirmed: boolean | null;
   treatmentRegimen: string | null;
   notes: string;
   synced: boolean;
-  imageKey: string; // preloaded slide key or 'uploaded'
+  imageKey: string;
   technician?: ChiefTechnician;
 }
 
@@ -191,6 +191,17 @@ export interface SyncStats {
   g6pdDeficientCount: number;
   molecularTestsRun: number;
   k13MutationsFound: number;
+}
+
+export interface SampleSlide {
+  key: string;
+  name: string;
+  description: string;
+  imagePath: string;
+  expectedResult: DiagnosticResult;
+  defaultHb?: number;
+  defaultRDT?: RDTResult;
+  defaultG6PD?: G6PDResult;
 }
 
 export const REGISTERED_FACILITIES: LabFacility[] = [
@@ -430,7 +441,7 @@ export const INITIAL_REAGENTS: ReagentItem[] = [
   }
 ];
 
-export const SAMPLE_SLIDES = [
+export const SAMPLE_SLIDES: SampleSlide[] = [
   {
     key: 'falciparum',
     name: 'Plasmodium falciparum Smear',
@@ -438,31 +449,31 @@ export const SAMPLE_SLIDES = [
     imagePath: falciparumImg,
     expectedResult: {
       parasiteDetected: true,
-      species: 'Plasmodium falciparum' as const,
+      species: 'Plasmodium falciparum',
       density: 18500,
       confidenceScore: 0.98,
       clinicalNotes: 'Characteristic multi-infection ring-form trophozoites observed. Delicate cytoplasm with distinct chromatin dots, typical of Plasmodium falciparum. Estimated density is high, requiring rapid clinical intervention.'
     },
-    defaultHb: 6.8, // Severe anemia threshold flag
+    defaultHb: 6.8,
     defaultRDT: {
       performed: true,
-      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual' as const,
+      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual',
       controlLine: true,
       hrp2Line: true,
       pldhLine: false,
       opticalDensityScore: 0.96,
       faintLineDetected: false,
-      interpretation: 'Pf Positive (HRP2+)' as const,
-      concordanceStatus: 'Concordant' as const,
+      interpretation: 'Pf Positive (HRP2+)',
+      concordanceStatus: 'Concordant',
       timestamp: new Date().toISOString()
     },
     defaultG6PD: {
       performed: true,
       enzymaticActivity: 10.4,
       percentNormal: 92,
-      status: 'Normal (>70%)' as const,
+      status: 'Normal (>70%)',
       primaquineSafe: true,
-      deviceModel: 'SD Biosensor STANDARD G6PD' as const
+      deviceModel: 'SD Biosensor STANDARD G6PD'
     }
   },
   {
@@ -472,7 +483,7 @@ export const SAMPLE_SLIDES = [
     imagePath: vivaxImg,
     expectedResult: {
       parasiteDetected: true,
-      species: 'Plasmodium vivax' as const,
+      species: 'Plasmodium vivax',
       density: 4200,
       confidenceScore: 0.94,
       clinicalNotes: 'Enlarged infected red blood cells containing irregular, ameboid trophozoites. Fine, eosinophilic stippling (Schüffner\'s dots) is present in the erythrocyte cytoplasm, confirming Plasmodium vivax.'
@@ -480,23 +491,23 @@ export const SAMPLE_SLIDES = [
     defaultHb: 11.2,
     defaultRDT: {
       performed: true,
-      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual' as const,
+      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual',
       controlLine: true,
       hrp2Line: false,
       pldhLine: true,
       opticalDensityScore: 0.88,
       faintLineDetected: false,
-      interpretation: 'Pv/Pan Positive (pLDH+)' as const,
-      concordanceStatus: 'Concordant' as const,
+      interpretation: 'Pv/Pan Positive (pLDH+)',
+      concordanceStatus: 'Concordant',
       timestamp: new Date().toISOString()
     },
     defaultG6PD: {
-      performed: false, // Requires safety gatekeeper check!
+      performed: false,
       enzymaticActivity: 0,
       percentNormal: 0,
-      status: 'Pending / Not Tested' as const,
+      status: 'Pending / Not Tested',
       primaquineSafe: false,
-      deviceModel: 'SD Biosensor STANDARD G6PD' as const,
+      deviceModel: 'SD Biosensor STANDARD G6PD',
       clinicalWarning: 'G6PD quantitative screening is MANDATORY before administering 14-day Primaquine for P. vivax radical cure.'
     }
   },
@@ -507,7 +518,7 @@ export const SAMPLE_SLIDES = [
     imagePath: malariaeImg,
     expectedResult: {
       parasiteDetected: true,
-      species: 'Plasmodium malariae' as const,
+      species: 'Plasmodium malariae',
       density: 1200,
       confidenceScore: 0.91,
       clinicalNotes: 'Compact, band-shaped trophozoites stretching across normal-sized, mature erythrocytes. Pigment is dark brown and coarse. Confirmed Plasmodium malariae with typical low-density presentation.'
@@ -515,23 +526,23 @@ export const SAMPLE_SLIDES = [
     defaultHb: 12.8,
     defaultRDT: {
       performed: true,
-      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual' as const,
+      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual',
       controlLine: true,
       hrp2Line: false,
       pldhLine: true,
       opticalDensityScore: 0.72,
       faintLineDetected: true,
-      interpretation: 'Pv/Pan Positive (pLDH+)' as const,
-      concordanceStatus: 'Concordant' as const,
+      interpretation: 'Pv/Pan Positive (pLDH+)',
+      concordanceStatus: 'Concordant',
       timestamp: new Date().toISOString()
     },
     defaultG6PD: {
       performed: true,
       enzymaticActivity: 11.1,
       percentNormal: 98,
-      status: 'Normal (>70%)' as const,
+      status: 'Normal (>70%)',
       primaquineSafe: true,
-      deviceModel: 'SD Biosensor STANDARD G6PD' as const
+      deviceModel: 'SD Biosensor STANDARD G6PD'
     }
   },
   {
@@ -541,7 +552,7 @@ export const SAMPLE_SLIDES = [
     imagePath: normalImg,
     expectedResult: {
       parasiteDetected: false,
-      species: 'None' as const,
+      species: 'None',
       density: 0,
       confidenceScore: 0.99,
       clinicalNotes: 'Erythrocytes exhibit normal morphology, size, and hemoglobinization. No intracellular parasites, ring forms, or Schüffner\'s dots detected. Healthy negative control.'
@@ -549,23 +560,23 @@ export const SAMPLE_SLIDES = [
     defaultHb: 13.6,
     defaultRDT: {
       performed: true,
-      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual' as const,
+      cassetteType: 'Pf (HRP2) / Pv (pLDH) Dual',
       controlLine: true,
       hrp2Line: false,
       pldhLine: false,
       opticalDensityScore: 0.05,
       faintLineDetected: false,
-      interpretation: 'Negative' as const,
-      concordanceStatus: 'Concordant' as const,
+      interpretation: 'Negative',
+      concordanceStatus: 'Concordant',
       timestamp: new Date().toISOString()
     },
     defaultG6PD: {
       performed: true,
       enzymaticActivity: 12.0,
       percentNormal: 100,
-      status: 'Normal (>70%)' as const,
+      status: 'Normal (>70%)',
       primaquineSafe: true,
-      deviceModel: 'SD Biosensor STANDARD G6PD' as const
+      deviceModel: 'SD Biosensor STANDARD G6PD'
     }
   }
 ];
