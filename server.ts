@@ -16,7 +16,8 @@ import { SAMPLE_SLIDES, DiagnosticRecord } from './src/types';
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+// CRITICAL FIX FOR RENDER/RAILWAY: Use process.env.PORT if available, fallback to 3000 for local dev
+const PORT = process.env.PORT || 3000;
 
 // Increase payload limit for base64 microscope scans
 app.use(express.json({ limit: '10mb' }));
@@ -43,7 +44,6 @@ function seedHistoricalData() {
   const now = new Date();
   for (let i = 29; i >= 0; i--) {
     const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-    // Generate 1-3 records per day
     const recordsCount = Math.floor(Math.random() * 3) + 1;
     
     for (let r = 0; r < recordsCount; r++) {
@@ -76,9 +76,9 @@ function seedHistoricalData() {
         ? (species === 'Plasmodium falciparum' ? 'Artemether-Lumefantrine (Coartem)' : 'Chloroquine')
         : null;
 
-      const patientAge = Math.floor(Math.random() * 55) + 3; // Age 3 to 58
-      const recordDate = new Date(date.getTime() + Math.floor(Math.random() * 8 * 60 * 60 * 1000)); // random hour
-      const hbVal = parseFloat((Math.random() * 8 + 6).toFixed(1)); // 6.0 - 14.0 g/dL
+      const patientAge = Math.floor(Math.random() * 55) + 3;
+      const recordDate = new Date(date.getTime() + Math.floor(Math.random() * 8 * 60 * 60 * 1000));
+      const hbVal = parseFloat((Math.random() * 8 + 6).toFixed(1));
 
       let severityGrade: 'Uncomplicated' | 'Severe (High Parasitemia)' | 'Emergency (Severe Anemic Crisis)' | 'Negative' = 'Uncomplicated';
       if (!parasiteDetected) {
@@ -106,7 +106,7 @@ function seedHistoricalData() {
         patient: {
           name: patientName,
           age: patientAge,
-          weight: Math.floor(patientAge * 1.5 + 10), // Estimate
+          weight: Math.floor(patientAge * 1.5 + 10),
           gender: isMale ? 'Male' : 'Female',
           clinicId: chosenClinic.name
         },
@@ -149,7 +149,7 @@ function seedHistoricalData() {
         },
         severityGrade,
         timestamp: recordDate.toISOString(),
-        workerConfirmed: Math.random() > 0.05, // 95% confirmed
+        workerConfirmed: Math.random() > 0.05,
         treatmentRegimen: treatment,
         notes: notes,
         synced: true,
@@ -158,7 +158,6 @@ function seedHistoricalData() {
     }
   }
   
-  // Sort by date descending
   surveillanceRecords.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
@@ -185,18 +184,14 @@ function getGeminiClient(): GoogleGenAI | null {
 }
 
 // API Routes
-
-// Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', api_key_configured: !!process.env.GEMINI_API_KEY });
 });
 
-// Get Records with optional Lab Node Code, search & filter parameters
 app.get('/api/records', (req, res) => {
-  const { nodeCode, facilityCode, search, species, status } = req.query;
+  const { nodeCode, facilityCode, search, species } = req.query;
   let results = [...surveillanceRecords];
 
-  // Filter by Lab Node Code / Facility Code search parameter
   const targetCode = (nodeCode || facilityCode) as string;
   if (targetCode && typeof targetCode === 'string') {
     const codeQuery = targetCode.trim().toLowerCase();
@@ -206,7 +201,6 @@ app.get('/api/records', (req, res) => {
     );
   }
 
-  // Filter by general search string
   if (search && typeof search === 'string') {
     const q = search.trim().toLowerCase();
     results = results.filter(r => 
@@ -219,7 +213,6 @@ app.get('/api/records', (req, res) => {
     );
   }
 
-  // Filter by species if requested
   if (species && typeof species === 'string' && species !== 'ALL') {
     results = results.filter(r => r.result.species.toLowerCase().includes(species.toLowerCase()));
   }
@@ -227,7 +220,6 @@ app.get('/api/records', (req, res) => {
   res.json(results);
 });
 
-// Audit Trail Endpoints for Supervisor Traceability
 app.get('/api/audit-trail', (req, res) => {
   const { nodeCode } = req.query;
   let logs = [...auditTrailLogs];
@@ -253,10 +245,8 @@ app.post('/api/audit-trail', (req, res) => {
   res.status(201).json({ success: true, auditId: newAuditEntry.id });
 });
 
-// Sync/Save Records
 app.post('/api/records', (req, res) => {
   const newRecord: DiagnosticRecord = req.body;
-  
   newRecord.synced = true;
   
   const index = surveillanceRecords.findIndex(r => r.id === newRecord.id);
@@ -269,7 +259,6 @@ app.post('/api/records', (req, res) => {
   res.status(201).json({ success: true, record: newRecord });
 });
 
-// Bulk Restore/Import Records from USB Backup
 app.post('/api/records/bulk', (req, res) => {
   const { records: importedRecords, mode } = req.body;
   if (!Array.isArray(importedRecords)) {
@@ -290,7 +279,6 @@ app.post('/api/records/bulk', (req, res) => {
   res.status(200).json({ success: true, total: surveillanceRecords.length });
 });
 
-// Run AI Diagnostic Smear Analysis
 app.post('/api/diagnose', async (req, res) => {
   const { imageKey, imageData, patient } = req.body;
   const isUploaded = imageKey === 'uploaded';
@@ -319,8 +307,8 @@ app.post('/api/diagnose', async (req, res) => {
           density,
           confidenceScore: parseFloat((Math.random() * 0.12 + 0.85).toFixed(2)),
           clinicalNotes: detected 
-            ? `Self-uploaded clinical smear. Interactive local scan detected intracellular inclusions corresponding to ${species}. Ring structures and trophozoite count indicates a density of approximately ${density} parasites/µL.`
-            : 'Self-uploaded clinical smear. Interactive local scan returned normal results. No parasites or ring stages observed.'
+            ? `Self-uploaded clinical smear. Interactive local scan detected intracellular inclusions corresponding to ${species}.`
+            : 'Self-uploaded clinical smear. Interactive local scan returned normal results.'
         };
       } else if (sample) {
         const variance = Math.floor((Math.random() - 0.5) * (sample.expectedResult.density * 0.1));
@@ -344,10 +332,7 @@ app.post('/api/diagnose', async (req, res) => {
       const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
       
       imagePart = {
-        inlineData: {
-          data: base64Data,
-          mimeType
-        }
+        inlineData: { data: base64Data, mimeType }
       };
     } else {
       const sample = SAMPLE_SLIDES.find(s => s.key === imageKey);
@@ -371,59 +356,32 @@ app.post('/api/diagnose', async (req, res) => {
       
       const fileBuffer = fs.readFileSync(fullPath);
       imagePart = {
-        inlineData: {
-          data: fileBuffer.toString('base64'),
-          mimeType: 'image/jpeg'
-        }
+        inlineData: { data: fileBuffer.toString('base64'), mimeType: 'image/jpeg' }
       };
     }
 
     const patientContext = patient 
-      ? `Patient: ${patient.name}, Age: ${patient.age}, Weight: ${patient.weight}kg, Clinic: ${patient.clinicId || 'Remote Clinic'}`
+      ? `Patient: ${patient.name}, Age: ${patient.age}, Weight: ${patient.weight}kg`
       : 'Patient metadata not specified';
 
-    const systemPrompt = `You are a world-class tropical medical parasitologist and AI diagnostic system integrated into the AI-MalScan portable microscope.
-Your task is to analyze this high-resolution thin blood smear microscope slide and provide a definitive clinical malaria diagnosis.
-
+    const systemPrompt = `You are a tropical medical parasitologist and AI diagnostic system in the AI-MalScan microscope.
+Analyze this high-resolution thin blood smear microscope slide and provide a definitive clinical malaria diagnosis.
 Clinical Context: ${patientContext}
-
-Examine the image carefully for:
-1. Presence of Plasmodium species malaria parasites (ring-form trophozoites, ameboid forms, band forms, gametocytes, or schizonts inside red blood cells).
-2. Species classification: Plasmodium falciparum, Plasmodium vivax, Plasmodium malariae, Plasmodium ovale, or None.
-3. Infection density (parasites/µL) estimating based on the level of parasitemia. For falciparum, range from 2,000 to 100,000+ is common. For vivax, 1,000 to 15,000. For malariae, 200 to 5,000.
-4. Professional clinical diagnostic commentary detailing your findings.
-
 Provide your output strictly in JSON according to the schema provided.`;
 
     const response = await client.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       contents: [imagePart, { text: systemPrompt }],
       config: {
         responseMimeType: 'application/json',
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            parasiteDetected: {
-              type: Type.BOOLEAN,
-              description: 'Whether malaria parasites (Plasmodium species) are detected in the red blood cells.'
-            },
-            species: {
-              type: Type.STRING,
-              description: 'The classified Plasmodium species or "None" if parasiteDetected is false.',
-              enum: ['Plasmodium falciparum', 'Plasmodium vivax', 'Plasmodium malariae', 'Plasmodium ovale', 'None']
-            },
-            density: {
-              type: Type.INTEGER,
-              description: 'Estimated parasite density per microliter (parasites/µL). Should be 0 if parasiteDetected is false.'
-            },
-            confidenceScore: {
-              type: Type.NUMBER,
-              description: 'Inference confidence level as a value between 0.00 and 1.00.'
-            },
-            clinicalNotes: {
-              type: Type.STRING,
-              description: 'Detailed microscopic commentary describing visible erythrocyte morphology, parasite structures observed, and diagnostic recommendations.'
-            }
+            parasiteDetected: { type: Type.BOOLEAN },
+            species: { type: Type.STRING, enum: ['Plasmodium falciparum', 'Plasmodium vivax', 'Plasmodium malariae', 'Plasmodium ovale', 'None'] },
+            density: { type: Type.INTEGER },
+            confidenceScore: { type: Type.NUMBER },
+            clinicalNotes: { type: Type.STRING }
           },
           required: ['parasiteDetected', 'species', 'density', 'confidenceScore', 'clinicalNotes']
         }
@@ -431,26 +389,17 @@ Provide your output strictly in JSON according to the schema provided.`;
     });
 
     const text = response.text;
-    if (!text) {
-      throw new Error('Empty response received from Gemini.');
-    }
-
-    const cleanedText = text.trim();
-    const resultObj = JSON.parse(cleanedText);
+    if (!text) throw new Error('Empty response received from Gemini.');
     
-    return res.json({ result: resultObj, source: 'gemini_3.5_flash' });
+    return res.json({ result: JSON.parse(text.trim()), source: 'gemini_2.5_flash' });
 
   } catch (err: any) {
     console.error('Error in AI diagnostic scan:', err);
-    res.status(500).json({ 
-      error: 'AI Diagnostic Scan failed.', 
-      message: err.message,
-      source: 'error_recovery_fallback'
-    });
+    res.status(500).json({ error: 'AI Diagnostic Scan failed.', message: err.message, source: 'error_recovery_fallback' });
   }
 });
 
-// Setup Vite Dev server or Serve static files
+// Setup Vite Dev server or Serve built static files in production
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -466,8 +415,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`AI-MalScan server running on http://localhost:${PORT}`);
+  app.listen(Number(PORT), '0.0.0.0', () => {
+    console.log(`AI-MalScan server running on port ${PORT}`);
   });
 }
 
