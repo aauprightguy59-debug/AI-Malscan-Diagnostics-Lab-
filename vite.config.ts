@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(() => {
   return {
-    base: './',
+    base: '/AI-Malscan-Diagnostics-Lab-/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
