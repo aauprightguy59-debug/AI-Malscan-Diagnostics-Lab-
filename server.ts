@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Type } from '@google/genai';
-import { SAMPLE_SLIDES, DiagnosticRecord } from './src/types.js'; // Using .js for ESM resolution if needed, or tsx will resolve
+import { SAMPLE_SLIDES, DiagnosticRecord } from './src/types';
 
 // Load environment variables
 dotenv.config();
@@ -257,10 +257,8 @@ app.post('/api/audit-trail', (req, res) => {
 app.post('/api/records', (req, res) => {
   const newRecord: DiagnosticRecord = req.body;
   
-  // Clean ID if duplicates exist, assign synchronized state
   newRecord.synced = true;
   
-  // Check if we already have it to avoid duplicates during resync
   const index = surveillanceRecords.findIndex(r => r.id === newRecord.id);
   if (index >= 0) {
     surveillanceRecords[index] = newRecord;
@@ -281,7 +279,6 @@ app.post('/api/records/bulk', (req, res) => {
   if (mode === 'replace') {
     surveillanceRecords = importedRecords.map(r => ({ ...r, synced: true }));
   } else {
-    // Merge: update or append
     const recordMap = new Map<string, DiagnosticRecord>();
     surveillanceRecords.forEach(r => recordMap.set(r.id, r));
     importedRecords.forEach(r => recordMap.set(r.id, { ...r, synced: true }));
@@ -301,16 +298,13 @@ app.post('/api/diagnose', async (req, res) => {
   try {
     const client = getGeminiClient();
     
-    // Fallback: If no Gemini client is configured, run high-fidelity simulated analysis
     if (!client) {
       console.log('No Gemini API key configured. Using local Diagnostic Engine fallback.');
-      // Find sample slide info
       const sample = SAMPLE_SLIDES.find(s => s.key === imageKey);
       
       let finalResult;
       if (isUploaded && imageData) {
-        // For uploaded images, mock some realistic results based on patient metadata or general clinical variance
-        const detected = Math.random() > 0.3; // 70% positive for demo purposes
+        const detected = Math.random() > 0.3;
         const speciesList: Array<'Plasmodium falciparum' | 'Plasmodium vivax' | 'Plasmodium malariae'> = [
           'Plasmodium falciparum', 'Plasmodium vivax', 'Plasmodium malariae'
         ];
@@ -329,8 +323,7 @@ app.post('/api/diagnose', async (req, res) => {
             : 'Self-uploaded clinical smear. Interactive local scan returned normal results. No parasites or ring stages observed.'
         };
       } else if (sample) {
-        // Return preloaded slide expected results with tiny variances to make it feel organic
-        const variance = Math.floor((Math.random() - 0.5) * (sample.expectedResult.density * 0.1)); // +/- 5% variance
+        const variance = Math.floor((Math.random() - 0.5) * (sample.expectedResult.density * 0.1));
         finalResult = {
           ...sample.expectedResult,
           density: sample.expectedResult.density > 0 ? sample.expectedResult.density + variance : 0,
@@ -340,15 +333,12 @@ app.post('/api/diagnose', async (req, res) => {
         throw new Error('Unknown slide configuration.');
       }
       
-      // Artificial scan delay to mimic processing (e.g. 2s)
       await new Promise(resolve => setTimeout(resolve, 2000));
       return res.json({ result: finalResult, source: 'local_diagnostic_engine' });
     }
 
-    // Call actual Gemini API with blood smear image
     let imagePart;
     if (isUploaded && imageData) {
-      // Remove dataurl prefix if present
       const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
       const mimeMatch = imageData.match(/^data:(image\/\w+);base64,/);
       const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
@@ -360,13 +350,11 @@ app.post('/api/diagnose', async (req, res) => {
         }
       };
     } else {
-      // Load sample slide image file from local assets
       const sample = SAMPLE_SLIDES.find(s => s.key === imageKey);
       if (!sample) {
         throw new Error(`Sample slide ${imageKey} not found.`);
       }
       
-      // Construct exact path on disk
       const slideDiskMap: Record<string, string> = {
         falciparum: 'src/assets/images/falciparum_smear_1783686249385.jpg',
         vivax: 'src/assets/images/vivax_smear_1783686263162.jpg',
@@ -403,7 +391,7 @@ Examine the image carefully for:
 1. Presence of Plasmodium species malaria parasites (ring-form trophozoites, ameboid forms, band forms, gametocytes, or schizonts inside red blood cells).
 2. Species classification: Plasmodium falciparum, Plasmodium vivax, Plasmodium malariae, Plasmodium ovale, or None.
 3. Infection density (parasites/µL) estimating based on the level of parasitemia. For falciparum, range from 2,000 to 100,000+ is common. For vivax, 1,000 to 15,000. For malariae, 200 to 5,000.
-4. Professional clinical diagnostic commentary detailing your findings (e.g. morphology of red blood cells, shape of chromatin, cytoplasm structures, any stippling, and recommendation).
+4. Professional clinical diagnostic commentary detailing your findings.
 
 Provide your output strictly in JSON according to the schema provided.`;
 
@@ -434,7 +422,7 @@ Provide your output strictly in JSON according to the schema provided.`;
             },
             clinicalNotes: {
               type: Type.STRING,
-              description: 'Detailed microscopic commentary describing visible erythrocyte morphology, parasite structures observed (e.g. ring stages, trophozoites), and diagnostic recommendations.'
+              description: 'Detailed microscopic commentary describing visible erythrocyte morphology, parasite structures observed, and diagnostic recommendations.'
             }
           },
           required: ['parasiteDetected', 'species', 'density', 'confidenceScore', 'clinicalNotes']
