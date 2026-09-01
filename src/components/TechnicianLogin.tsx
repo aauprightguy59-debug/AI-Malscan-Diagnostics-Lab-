@@ -40,9 +40,15 @@ export default function TechnicianLogin({ onLogin }: TechnicianLoginProps) {
       setError('Login Password is required to unlock diagnostic instruments.');
       return;
     }
-    if (password !== 'SCAN01') {
-      setError('Invalid Chief Technician Password. Access denied.');
+
+    const storedPassword = localStorage.getItem('aimalscan_lab_password');
+    if (storedPassword && password !== storedPassword) {
+      setError('Invalid Chief Technician Password. Please enter your registered facility password.');
       return;
+    }
+
+    if (!storedPassword) {
+      localStorage.setItem('aimalscan_lab_password', password.trim());
     }
 
     setIsSubmitting(true);
