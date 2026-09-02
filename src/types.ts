@@ -3,14 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Dynamically handles the subpath for GitHub Pages vs Local/Render deployment
-const base = import.meta.env.BASE_URL || '/';
-
-export const labLogo = `${base}malaria_lab_logo_1783687025061.jpg`;
-export const falciparumImg = `${base}falciparum_smear_1783686249385.jpg`;
-export const vivaxImg = `${base}vivax_smear_1783686263162.jpg`;
-export const malariaeImg = `${base}malariae_smear_1783686277652.jpg`;
-export const normalImg = `${base}normal_smear_1783686291345.jpg`;
+export const labLogo = '/malaria_lab_logo_1783687025061.jpg';
+export const falciparumImg = '/falciparum_smear_1783686249385.jpg';
+export const vivaxImg = '/vivax_smear_1783686263162.jpg';
+export const malariaeImg = '/malariae_smear_1783686277652.jpg';
+export const normalImg = '/normal_smear_1783686291345.jpg';
 
 export interface LabFacility {
   id: string;

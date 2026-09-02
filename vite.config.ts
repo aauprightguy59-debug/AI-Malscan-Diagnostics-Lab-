@@ -4,11 +4,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(() => {
-  // Use relative base './' for Render & local builds, and repo subpath for GitHub Pages
-  const base = process.env.GITHUB_ACTIONS === 'true' ? '/AI-Malscan-Diagnostics-Lab-/' : './';
-
   return {
-    base,
+    base: '/AI-Malscan-Diagnostics-Lab-/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
