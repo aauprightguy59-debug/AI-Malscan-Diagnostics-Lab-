@@ -229,7 +229,7 @@ export default function LabRegistrationGateway({
       localStorage.getItem('aimalscan_lab_password');
 
     if (storedFacilityPassword && password !== storedFacilityPassword) {
-      setError('Invalid laboratory password. Please enter the password you created during registration, or click "Edit / Change Lab Registration" to update your credentials.');
+      setError('Invalid laboratory password. Please enter the password you created during registration.');
       return;
     }
 
@@ -398,18 +398,20 @@ export default function LabRegistrationGateway({
               {/* Step Navigation Tabs */}
               <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800 mb-6">
                 
-                <button
-                  id="tab-register-lab-btn"
-                  onClick={() => setActiveStep('register')}
-                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                    activeStep === 'register'
-                      ? 'bg-teal-500 text-slate-950 shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <Building2 className="h-3.5 w-3.5" />
-                  <span>Step 1: Register Diagnostic Lab</span>
-                </button>
+                {!registeredFacility && (
+                  <button
+                    id="tab-register-lab-btn"
+                    onClick={() => setActiveStep('register')}
+                    className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                      activeStep === 'register'
+                        ? 'bg-teal-500 text-slate-950 shadow-md'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <Building2 className="h-3.5 w-3.5" />
+                    <span>Step 1: Register Diagnostic Lab</span>
+                  </button>
+                )}
 
                 <button
                   id="tab-signin-btn"
@@ -455,23 +457,13 @@ export default function LabRegistrationGateway({
               )}
 
               {/* STEP 1: REGISTER DIAGNOSTIC LAB FORM */}
-              {activeStep === 'register' && (
+              {activeStep === 'register' && !registeredFacility && (
                 <form onSubmit={handleRegisterLab} className="space-y-3.5 animate-fade-in" id="register-diagnostic-lab-form">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                     <div>
                       <h2 className="text-sm font-bold text-white uppercase tracking-tight">Register Diagnostic Lab</h2>
                       <p className="text-[11px] text-slate-400">Register your laboratory facility details before logging in</p>
                     </div>
-                    {registeredFacility && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveStep('signin')}
-                        className="text-xs font-mono text-teal-400 hover:text-teal-300 flex items-center space-x-1 cursor-pointer"
-                      >
-                        <span>Already Registered? Sign In</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </button>
-                    )}
                   </div>
 
                   {/* Diagnostic Lab Name */}
@@ -702,13 +694,6 @@ export default function LabRegistrationGateway({
                       <h2 className="text-sm font-bold text-white uppercase tracking-tight">Chief Scientist Security Sign-In</h2>
                       <p className="text-[11px] text-slate-400">Unlock diagnostic instruments for your registered laboratory</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveStep('register')}
-                      className="text-xs font-mono text-teal-400 hover:text-teal-300 underline cursor-pointer"
-                    >
-                      Edit / Change Lab Registration
-                    </button>
                   </div>
 
                   {/* Registered Lab Display Badge */}
