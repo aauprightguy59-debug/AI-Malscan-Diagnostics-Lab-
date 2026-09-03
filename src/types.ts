@@ -3,11 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export const labLogo = '/malaria_lab_logo_1783687025061.jpg';
-export const falciparumImg = '/falciparum_smear_1783686249385.jpg';
-export const vivaxImg = '/vivax_smear_1783686263162.jpg';
-export const malariaeImg = '/malariae_smear_1783686277652.jpg';
-export const normalImg = '/normal_smear_1783686291345.jpg';
+const publicAsset = (filename: string) =>
+  typeof window === 'undefined' ? `/${filename}` : new URL(filename, document.baseURI).toString();
+
+export const labLogo = publicAsset('malaria_lab_logo_1783687025061.jpg');
+export const falciparumImg = publicAsset('falciparum_smear_1783686249385.jpg');
+export const vivaxImg = publicAsset('vivax_smear_1783686263162.jpg');
+export const malariaeImg = publicAsset('malariae_smear_1783686277652.jpg');
+export const normalImg = publicAsset('normal_smear_1783686291345.jpg');
 
 export interface LabFacility {
   id: string;
