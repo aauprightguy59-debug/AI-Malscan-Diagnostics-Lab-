@@ -1,4 +1,4 @@
-name: Build and deploy to GitHub Pages
+name: Node.js CI/CD
 
 on:
   push:
